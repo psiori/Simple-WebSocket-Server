@@ -104,7 +104,7 @@ namespace SimpleWeb {
       friend class SocketServer<socket_type>;
 
     public:
-      Connection(std::unique_ptr<socket_type> &&socket) noexcept : socket(std::move(socket)), timeout_idle(0), strand(this->socket->get_io_service()), closed(false) {}
+      Connection(std::unique_ptr<socket_type> &&socket) noexcept : socket(std::move(socket)), timeout_idle(0), strand(this->socket->get_executor().context()), closed(false) {}
 
       std::string method, path, query_string, http_version;
 
@@ -130,7 +130,7 @@ namespace SimpleWeb {
     private:
       template <typename... Args>
       Connection(std::shared_ptr<ScopeRunner> handler_runner, long timeout_idle, Args &&... args) noexcept
-          : handler_runner(std::move(handler_runner)), socket(new socket_type(std::forward<Args>(args)...)), timeout_idle(timeout_idle), strand(socket->get_io_service()), closed(false) {}
+          : handler_runner(std::move(handler_runner)), socket(new socket_type(std::forward<Args>(args)...)), timeout_idle(timeout_idle), strand(socket->get_executor().context()), closed(false) {}
 
       std::shared_ptr<ScopeRunner> handler_runner;
 
@@ -165,7 +165,7 @@ namespace SimpleWeb {
           return;
         }
 
-        timer = std::unique_ptr<asio::steady_timer>(new asio::steady_timer(socket->get_io_service()));
+        timer = std::unique_ptr<asio::steady_timer>(new asio::steady_timer(socket->get_executor().context()));
         timer->expires_from_now(std::chrono::seconds(seconds));
         std::weak_ptr<Connection> connection_weak(this->shared_from_this()); // To avoid keeping Connection instance alive longer than needed
         timer->async_wait([connection_weak, use_timeout_idle](const error_code &ec) {
