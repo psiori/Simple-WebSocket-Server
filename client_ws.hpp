@@ -110,7 +110,7 @@ namespace SimpleWeb {
     private:
       template <typename... Args>
       Connection(std::shared_ptr<ScopeRunner> handler_runner, long timeout_idle, Args &&... args) noexcept
-          : handler_runner(std::move(handler_runner)), socket(new socket_type(std::forward<Args>(args)...)), timeout_idle(timeout_idle), strand(socket->get_executor().context()), closed(false) {}
+          : handler_runner(std::move(handler_runner)), socket(new socket_type(std::forward<Args>(args)...)), timeout_idle(timeout_idle), strand(asio::make_strand(asio::make_strand(socket->get_executor().context()))), closed(false) {}
 
       std::shared_ptr<ScopeRunner> handler_runner;
 
